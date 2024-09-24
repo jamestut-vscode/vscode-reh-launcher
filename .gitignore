@@ -1,0 +1,5 @@
+*.zip
+run.pid
+config.json
+server-data/
+vscode-reh-*/
