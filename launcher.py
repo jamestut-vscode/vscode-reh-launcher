@@ -263,12 +263,16 @@ def termination_signal_handler(sig, frame):
 def main():
     global config
 
+    DEFAULT_CONFIG_FILE = "config.json"
+
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true",
+    ap.add_argument("--dry-run", "-n", action="store_true",
         help="If specified, print the command that will be used to run "
         "VSCode REH.")
-    ap.add_argument("--foreground", action="store_true",
+    ap.add_argument("--foreground", "-f", action="store_true",
         help="If specified, run in foreground instead of forking.")
+    ap.add_argument("--config", "-c", default=DEFAULT_CONFIG_FILE,
+        help=f"Specify the configuration file (default: {DEFAULT_CONFIG_FILE}).")
     args = ap.parse_args()
 
     signal.signal(signal.SIGTERM, termination_signal_handler)
@@ -280,13 +284,13 @@ def main():
 
     # check config file
     try:
-        with open('config.json', 'r') as f:
+        with open(args.config, 'r') as f:
             config_data = json.load(f)
     except FileNotFoundError:
         # all default settings
         config_data = {}
     except Exception as ex:
-        printe('Error opening config.json:', str(ex))
+        printe('Error opening configuration file:', str(ex))
         sys.exit(1)
 
     config = ConfigAccessor(config_data)

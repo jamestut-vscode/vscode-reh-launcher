@@ -1,5 +1,5 @@
 *.zip
 run.pid
-config.json
+*.json
 server-data/
 vscode-reh-*/
