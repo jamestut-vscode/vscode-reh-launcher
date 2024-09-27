@@ -273,10 +273,10 @@ def main():
 
     signal.signal(signal.SIGTERM, termination_signal_handler)
 
-    populate_platform_reh_name()
-
     # cwd to script's directory (repo's directory)
     os.chdir(path.dirname(sys.argv[0]))
+
+    populate_platform_reh_name()
 
     # check config file
     try:
