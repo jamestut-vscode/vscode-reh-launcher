@@ -17,11 +17,11 @@ In this repo, create a file named `config.json` containing an object with the fo
 - `host`: IP address or host name to listen on. Default is `127.0.0.1`.
 - `port`: An integer containing the port number to listen on. Default is `3250`.
 - `token`: A string containing the authentication token. Default is to not use an authentication token at all.
-- `data-dir`: A string containing the location to server's data directory. Default is `server-data/data` in this repository's directory.
-- `ext-dir`: A string containing the location to server's extensions directory. Default is `server-data/extensions` in this repository's directory.
+- `data_dir`: A string containing the location to server's data directory. Default is `server-data/data` in this repository's directory.
+- `ext_dir`: A string containing the location to server's extensions directory. Default is `server-data/extensions` in this repository's directory.
 - `pidfile`: Path to the file that contains information about the currently running instance. Default is `run.pid`.
 - `logfile`: Path to the log file. Default is `server-data/reh-%pid.log`. `%pid` will be substituted by the PID of the launcher.
-- `extra-args`: An array of string containing extra arguments to be passed to VSCode's REH.
+- `extra_args`: An array of string containing extra arguments to be passed to VSCode's REH.
 
 **Example config:**
 

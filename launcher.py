@@ -29,7 +29,7 @@ class ConfigAccessor:
         "data_dir": path.join(_DEFAULT_BASE_DATADIR, "data"),
         "ext_dir": path.join(_DEFAULT_BASE_DATADIR, "extensions"),
         "pidfile": "run.pid",
-        "logprefix": path.join(_DEFAULT_BASE_DATADIR, "reh-%pid.log"),
+        "logfile": path.join(_DEFAULT_BASE_DATADIR, "reh-%pid.log"),
         "extra_args": []
     }
 
@@ -200,7 +200,7 @@ def do_start_reh(foreground, reh_launch_args: list):
         daemonize()
 
     # open log file
-    logfile = config.logprefix.replace('%pid', str(os.getpid()))
+    logfile = config.logfile.replace('%pid', str(os.getpid()))
 
     if foreground:
         print(f"Launcher's PID:", os.getpid())
