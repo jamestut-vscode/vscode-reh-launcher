@@ -189,9 +189,13 @@ def daemonize():
         # exit the second parent process
         sys.exit(0)
 
-    # detach stdin
-    nullfd = os.open('/dev/null', os.O_RDONLY)
-    os.dup2(nullfd, sys.stdin.fileno())
+    # detach stdio
+    null_si = os.open('/dev/null', os.O_RDONLY)
+    os.dup2(null_si, sys.stdin.fileno())
+    null_so = os.open('/dev/null', os.O_WRONLY)
+    os.dup2(null_so, sys.stdout.fileno())
+    null_se = os.open('/dev/null', os.O_WRONLY)
+    os.dup2(null_se, sys.stderr.fileno())
 
 def do_start_reh(foreground, reh_launch_args: list):
     os.makedirs("server-data", exist_ok=True)
