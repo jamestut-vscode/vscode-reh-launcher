@@ -176,6 +176,9 @@ def replace_extracted_version():
     subprocess.run(["unzip", "-q", f'{platform_reh_name}.zip'])
 
 def daemonize():
+    sys.stdout.flush()
+    sys.stderr.flush()
+
     pid = os.fork()
     if pid > 0:
         # exit the original parent process
