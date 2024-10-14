@@ -38,7 +38,8 @@ class ConfigAccessor:
         # create the necessary directories
         for key_with_path in ["data_dir", "ext_dir", "pidfile", "logfile"]:
             dirpath = path.dirname(getattr(self, key_with_path))
-            os.makedirs(dirpath, exist_ok=True)
+            if dirpath:
+                os.makedirs(dirpath, exist_ok=True)
 
     def __getattribute__(self, name: str):
         if name in ConfigAccessor._default_values:
