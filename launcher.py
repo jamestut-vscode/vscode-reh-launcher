@@ -28,6 +28,7 @@ class ConfigAccessor:
         "token": None,
         "data_dir": path.join(_DEFAULT_BASE_DATADIR, "data"),
         "ext_dir": path.join(_DEFAULT_BASE_DATADIR, "extensions"),
+        "extract_dir": ".",
         "pidfile": "run.pid",
         "logfile": path.join(_DEFAULT_BASE_DATADIR, "reh-%pid.log"),
         "extra_args": []
@@ -36,7 +37,7 @@ class ConfigAccessor:
     def __init__(self, configdata: dict):
         self._configdata = configdata
         # create the necessary directories
-        for key_with_path in ["data_dir", "ext_dir", "pidfile", "logfile"]:
+        for key_with_path in ["data_dir", "ext_dir", "extract_dir", "pidfile", "logfile"]:
             dirpath = path.dirname(getattr(self, key_with_path))
             if dirpath:
                 os.makedirs(dirpath, exist_ok=True)
@@ -50,7 +51,7 @@ class ConfigAccessor:
 
 def reh_launch_command():
     args = [
-        path.join(platform_reh_name, 'bin', 'code-server-oss'),
+        path.join(get_reh_dir_path(), 'bin', 'code-server-oss'),
         "--host", config.host,
         "--port", config.port,
         "--server-data-dir", config.data_dir,
@@ -120,14 +121,14 @@ def is_version_newer(now, other):
     return extract_version_number_component(other) > extract_version_number_component(now)
 
 def get_version_number_from_existing():
-    direxist, _ = dir_or_zip_exist(platform_reh_name)
+    direxist, _ = dir_or_zip_exist()
     if not direxist:
         return None
-    with open(path.join(platform_reh_name, 'package.json'), 'r') as f:
+    with open(path.join(get_reh_dir_path(), 'package.json'), 'r') as f:
         return get_version_number_from_pkg(f)
 
 def get_version_number_from_zipfile():
-    _, zipexist = dir_or_zip_exist(platform_reh_name)
+    _, zipexist = dir_or_zip_exist()
     if not zipexist:
         return None
     with zipfile.ZipFile(f'{platform_reh_name}.zip', 'r') as zipobj:
@@ -138,47 +139,52 @@ def get_version_number_from_pkg(f):
     pkginfo = json.load(f)
     return pkginfo['version']
 
-def dir_or_zip_exist(name):
-    return path.isdir(name), path.isfile(f'{name}.zip')
+def get_reh_dir_path(name=None):
+    if name is None:
+        name = platform_reh_name
+    return path.join(config.extract_dir, name)
 
-def get_platform_reh_name():
-    PREFIX = 'vscode-reh-'
-    plat_suffixes = {
-        ('Darwin', 'arm64'): ['darwin-arm64'],
-        ('Linux', 'x86_64'): ['linux-x64', 'linux-legacy-x64'],
-        ('Linux', 'arm64'): ['linux-arm64', 'linux-legacy-arm64'],
-    }[(platform.system(), platform.machine())]
+def dir_or_zip_exist(name=None):
+    if name is None:
+        name = platform_reh_name
+    return path.isdir(get_reh_dir_path(name)), path.isfile(f'{name}.zip')
 
-    # scan current directory for the presence of the .zip file and the folder
-    available_names = []
-    for suffix in plat_suffixes:
-        dirname = f'{PREFIX}{suffix}'
-        if any(dir_or_zip_exist(dirname)):
-            available_names.append(dirname)
-
-    if len(available_names) > 1:
-        raise RuntimeError("Multiple VSCode REH with different platform suffix found.")
-    elif not available_names:
-        raise RuntimeError("No VSCode REH detected.")
-
-    return available_names[0]
-
-def populate_platform_reh_name():
+def populate_platform_reh_name_paths():
     global platform_reh_name
+
     try:
-        platform_reh_name = get_platform_reh_name()
+        PREFIX = 'vscode-reh-'
+        plat_suffixes = {
+            ('Darwin', 'arm64'): ['darwin-arm64'],
+            ('Linux', 'x86_64'): ['linux-x64', 'linux-legacy-x64'],
+            ('Linux', 'arm64'): ['linux-arm64', 'linux-legacy-arm64'],
+        }[(platform.system(), platform.machine())]
+
+        # scan current directory for the presence of the .zip file and the folder
+        available_names = []
+        for suffix in plat_suffixes:
+            plat_name_to_chk = f'{PREFIX}{suffix}'
+            if any(dir_or_zip_exist(plat_name_to_chk)):
+                available_names.append(plat_name_to_chk)
+
+        if len(available_names) > 1:
+            raise RuntimeError("Multiple VSCode REH with different platform suffix found.")
+        elif not available_names:
+            raise RuntimeError("No VSCode REH detected.")
+
+        platform_reh_name = available_names[0]
     except Exception as ex:
         printe(str(ex))
         sys.exit(1)
 
 def replace_extracted_version():
     # assume that the directory is unused and ready to be erased
-    direxist, _ = dir_or_zip_exist(platform_reh_name)
+    direxist, _ = dir_or_zip_exist()
     if direxist:
         print("Removing existing REH ...")
-        shutil.rmtree(platform_reh_name)
+        shutil.rmtree(get_reh_dir_path())
     print("Extracting REH from zip file ...")
-    subprocess.run(["unzip", "-q", f'{platform_reh_name}.zip'])
+    subprocess.run(["unzip", "-q", f'{platform_reh_name}.zip', '-d', config.extract_dir])
 
 def daemonize():
     sys.stdout.flush()
@@ -290,8 +296,6 @@ def main():
     # cwd to script's directory (repo's directory)
     os.chdir(path.dirname(sys.argv[0]))
 
-    populate_platform_reh_name()
-
     # check config file
     try:
         with open(args.config, 'r') as f:
@@ -304,6 +308,8 @@ def main():
         sys.exit(1)
 
     config = ConfigAccessor(config_data)
+
+    populate_platform_reh_name_paths()
 
     # check if instance is running
     try:

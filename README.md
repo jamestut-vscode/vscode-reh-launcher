@@ -19,6 +19,7 @@ In this repo, create a file named `config.json` containing an object with the fo
 - `token`: A string containing the authentication token. Default is to not use an authentication token at all.
 - `data_dir`: A string containing the location to server's data directory. Default is `server-data/data` in this repository's directory.
 - `ext_dir`: A string containing the location to server's extensions directory. Default is `server-data/extensions` in this repository's directory.
+- `extract_dir`: Path to extract VSCode's REH zip file. Default is this repository's directory.
 - `pidfile`: Path to the file that contains information about the currently running instance. Default is `run.pid`.
 - `logfile`: Path to the log file. Default is `server-data/reh-%pid.log`. `%pid` will be substituted by the PID of the launcher.
 - `extra_args`: An array of string containing extra arguments to be passed to VSCode's REH.
