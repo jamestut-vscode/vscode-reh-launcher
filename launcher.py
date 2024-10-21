@@ -337,20 +337,21 @@ def main():
         sys.exit(0)
 
     if running_pid:
+        # zip file is newer: stop existing instance
         if is_version_newer(running_version, zipfile_version):
             print("Provided zip file have newer version. Stopping existing instance ...")
             os.kill(running_pid, signal.SIGTERM)
             # wait for the lock to be released
             with acquire_lock_file() as f:
                 pass
-            replace_extracted_version()
-            do_start_reh(args.foreground, reh_launch_args)
-    else:
-        # no existing instance. check if the dropped zip file is of a newer version.
-        if is_version_newer(existing_version, zipfile_version):
-            print("Provided zip file have newer version. Replacing existing ...")
-            replace_extracted_version()
-        do_start_reh(args.foreground, reh_launch_args)
+        else:
+            # do not (re)start the REH
+            return
+    # check again if the extracted version is the same as the zip file
+    if is_version_newer(existing_version, zipfile_version):
+        print("Provided zip file have newer version. Replacing existing ...")
+        replace_extracted_version()
+    do_start_reh(args.foreground, reh_launch_args)
 
 if __name__ == "__main__":
     main()
