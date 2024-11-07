@@ -158,7 +158,10 @@ def populate_platform_reh_name_paths():
             ('Darwin', 'arm64'): ['darwin-arm64'],
             ('Linux', 'x86_64'): ['linux-x64', 'linux-legacy-x64'],
             ('Linux', 'arm64'): ['linux-arm64', 'linux-legacy-arm64'],
-        }[(platform.system(), platform.machine())]
+        }.get((platform.system(), platform.machine()))
+
+        if not plat_suffixes:
+            raise RuntimeError(f"Platform {platform.system()} {platform.machine()} not supported.")
 
         # scan current directory for the presence of the .zip file and the folder
         available_names = []
