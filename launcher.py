@@ -294,7 +294,9 @@ def main():
     signal.signal(signal.SIGTERM, termination_signal_handler)
 
     # cwd to script's directory (repo's directory)
-    os.chdir(path.dirname(sys.argv[0]))
+    script_dirname = path.dirname(sys.argv[0])
+    if script_dirname:
+        os.chdir(script_dirname)
 
     # check config file
     try:
