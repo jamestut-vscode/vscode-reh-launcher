@@ -157,7 +157,7 @@ def populate_platform_reh_name_paths():
         plat_suffixes = {
             ('Darwin', 'arm64'): ['darwin-arm64'],
             ('Linux', 'x86_64'): ['linux-x64', 'linux-legacy-x64'],
-            ('Linux', 'arm64'): ['linux-arm64', 'linux-legacy-arm64'],
+            ('Linux', 'aarch64'): ['linux-arm64', 'linux-legacy-arm64'],
         }.get((platform.system(), platform.machine()))
 
         if not plat_suffixes:
