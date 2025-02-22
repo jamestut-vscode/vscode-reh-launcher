@@ -161,7 +161,7 @@ def get_reh_name():
             # musl's ldd will return nonzero and put output on stderr
             ldd_version = ldd_proc.stdout if ldd_proc.returncode == 0 else ldd_proc.stderr
             ldd_version = ldd_version.splitlines()[0]
-            if ldd_version.startswith(b'ldd (GNU libc)'):
+            if ldd_version.startswith(b'ldd '):
                 # GNU!
                 components.append("linux-")
                 ldd_version = ldd_version.rsplit(maxsplit=1)[-1]
