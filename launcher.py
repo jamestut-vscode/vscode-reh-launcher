@@ -110,7 +110,6 @@ def extract_version_number_component(v):
         raise ValueError(f"Version number '{v}' not recognized")
 
 def is_version_newer(now, other):
-    assert any((now, other))
     if now is None:
         # nothing extracted yet: always newer
         return True
@@ -149,36 +148,42 @@ def dir_or_zip_exist(name=None):
         name = platform_reh_name
     return path.isdir(get_reh_dir_path(name)), path.isfile(f'{name}.zip')
 
-def populate_platform_reh_name_paths():
-    global platform_reh_name
-
+def get_reh_name():
     try:
-        PREFIX = 'vscode-reh-'
-        plat_suffixes = {
-            ('Darwin', 'arm64'): ['darwin-arm64'],
-            ('Linux', 'x86_64'): ['linux-x64', 'linux-legacy-x64'],
-            ('Linux', 'aarch64'): ['linux-arm64', 'linux-legacy-arm64'],
-        }.get((platform.system(), platform.machine()))
-
-        if not plat_suffixes:
-            raise RuntimeError(f"Platform {platform.system()} {platform.machine()} not supported.")
-
-        # scan current directory for the presence of the .zip file and the folder
-        available_names = []
-        for suffix in plat_suffixes:
-            plat_name_to_chk = f'{PREFIX}{suffix}'
-            if any(dir_or_zip_exist(plat_name_to_chk)):
-                available_names.append(plat_name_to_chk)
-
-        if len(available_names) > 1:
-            raise RuntimeError("Multiple VSCode REH with different platform suffix found.")
-        elif not available_names:
-            raise RuntimeError("No VSCode REH detected.")
-
-        platform_reh_name = available_names[0]
-    except Exception as ex:
-        printe(str(ex))
-        sys.exit(1)
+        components = ['vscode-reh-']
+        if platform.system() == 'Darwin':
+            if platform.machine() == 'arm64':
+                components.append('darwin-arm64')
+        elif platform.system() == 'Linux':
+            # check if system is GNU or musl
+            ldd_proc = subprocess.run(['ldd', '--version'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # musl's ldd will return nonzero and put output on stderr
+            ldd_version = ldd_proc.stdout if ldd_proc.returncode == 0 else ldd_proc.stderr
+            ldd_version = ldd_version.splitlines()[0]
+            if ldd_version.startswith(b'ldd (GNU libc)'):
+                # GNU!
+                components.append("linux-")
+                ldd_version = ldd_version.rsplit(maxsplit=1)[-1]
+                ldd_version = [int(i) for i in ldd_version.split(b'.')]
+                if ldd_version < [2, 38]:
+                    components.append("legacy-")
+                components.append({
+                    "x86_64": "x64",
+                    "aarch64": "arm64",
+                }[platform.machine()])
+            elif ldd_version.startswith(b"musl libc"):
+                # Alpine
+                components.append({
+                    "x86_64": "linux-alpine",
+                    "aarch64": "alpine-arm64"
+                }[platform.machine()])
+    except:
+        return None
+    
+    if len(components) <= 1:
+        return None
+    return ''.join(components)
 
 def replace_extracted_version():
     # assume that the directory is unused and ready to be erased
@@ -280,7 +285,7 @@ def termination_signal_handler(sig, frame):
     raise KeyboardInterrupt()
 
 def main():
-    global config
+    global config, platform_reh_name
 
     DEFAULT_CONFIG_FILE = "config.json"
 
@@ -314,7 +319,9 @@ def main():
 
     config = ConfigAccessor(config_data)
 
-    populate_platform_reh_name_paths()
+    platform_reh_name = get_reh_name()
+    if platform_reh_name is None:
+        raise RuntimeError("This platform is not supported.")
 
     # check if instance is running
     try:
@@ -353,6 +360,8 @@ def main():
             # do not (re)start the REH
             return
     # check again if the extracted version is the same as the zip file
+    if existing_version == None and zipfile_version == None:
+        raise RuntimeError(f"VSCode REH does not exist. Please provide '{platform_reh_name}.zip'.")
     if is_version_newer(existing_version, zipfile_version):
         print("Provided zip file have newer version. Replacing existing ...")
         replace_extracted_version()
